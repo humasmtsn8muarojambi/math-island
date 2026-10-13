@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Treasure Math Island Adventure: Quiz Edition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--ink:#3b2a14;--card:#fffdf5;--acc:#e08a00;--ok:#2e9b3a;--bad:#d8453a;--line:#e6d3a3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#f6ead0;--card:#2a3a3f;--line:#4a5d62}}
+:root[data-theme="dark"]{--ink:#f6ead0;--card:#2a3a3f;--line:#4a5d62}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{position:relative;font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;background:linear-gradient(#7fd4ff,#ffe9a8);color:var(--ink);overflow:hidden}
+@media(min-width:1600px){html{font-size:20px}}
+.scr{display:none;position:absolute;inset:0;overflow:auto;align-items:center;justify-content:center;padding:14px}
+.scr.on{display:flex}#adm{align-items:flex-start}
+.card{background:var(--card);border:3px solid var(--line);border-radius:20px;padding:20px;max-width:560px;width:100%;box-shadow:0 8px 0 rgba(0,0,0,.15)}
+#adm .card{max-width:1000px}
+h1{margin:0 0 4px;font-size:1.6rem;color:var(--acc)}h2{margin:12px 0 6px}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer;min-height:44px;margin:2px}
+.btn.alt{background:#1a9c8c}.btn.red{background:var(--bad)}.btn.ghost{background:var(--line);color:var(--ink)}
+input,select,textarea{width:100%;padding:10px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit;margin:4px 0 10px}
+textarea{font-family:monospace;font-size:12px;height:150px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.msg{color:var(--bad);font-weight:700;min-height:1.2em}.sub{opacity:.75;font-size:.85rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stat{background:var(--line);border-radius:12px;padding:10px;text-align:center}.stat b{display:block;font-size:1.3rem}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.85rem}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+#hud{position:absolute;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:6px;padding:8px;pointer-events:none}
+.chip{background:rgba(0,0,0,.6);color:#fff;border-radius:999px;padding:5px 12px;font-weight:700}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#tray{position:absolute;left:10px;top:52px;color:#fff;font-weight:700;text-shadow:0 2px 3px #000}
+#toast{position:absolute;top:30%;left:0;right:0;text-align:center;font-size:2rem;font-weight:800;color:#fff;text-shadow:0 3px 6px #000;opacity:0;transition:opacity .5s;pointer-events:none}
+#joy{position:absolute;left:20px;bottom:24px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.3);border:3px solid rgba(255,255,255,.7);touch-action:none;display:none}
+#knob{position:absolute;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.85);left:34px;top:34px;pointer-events:none}
+@media(pointer:coarse){#joy{display:block}}
+#hint{position:absolute;bottom:10px;right:14px;color:#fff;text-shadow:0 2px 3px #000;font-weight:700}
+#quiz{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:12px;z-index:5}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;background:var(--card);color:var(--ink);border:3px solid var(--line);font-size:1.05rem}
+#bar{height:10px;border-radius:6px;background:var(--acc);width:100%}
+</style></head><body>
+
+<section id="login" class="scr on"><div class="card">
+<h1>🏝️ TREASURE MATH ISLAND ADVENTURE</h1><div class="sub">Quiz Edition • Beach → Jungle → Cave → Treasure Vault</div>
+<div class="tabs"><button class="btn" id="tS">🧭 Student</button><button class="btn ghost" id="tA">🔐 Teacher</button></div>
+<div id="fS"><input id="sn" placeholder="Your name" autocomplete="off"><input id="sc" placeholder="Class (e.g. 8A)" autocomplete="off"><input id="st" placeholder="Token from your teacher" autocomplete="off">
+<button class="btn" id="go" style="width:100%">⚓ Start Adventure</button></div>
+<div id="fA" style="display:none"><input id="ap" type="password" placeholder="Admin password"><button class="btn alt" id="al" style="width:100%">Open Admin Panel</button></div>
+<div class="msg" id="lm"></div><div class="sub" id="bd"></div></div></section>
+
+<section id="game" class="scr" style="padding:0;display:none">
+<canvas id="cv"></canvas>
+<div id="hud"><span class="chip" id="hn"></span><span class="chip" id="hz"></span><span class="chip" id="hs"></span><span class="chip" id="hc"></span><span class="chip" id="hg"></span><span class="chip" id="ht"></span></div>
+<div id="tray"></div><div id="toast"></div><div id="joy"><div id="knob"></div></div><div id="hint">⬆️⬇️⬅️➡️ / WASD to move</div>
+<div id="quiz"><div class="card"><div class="sub" id="qs"></div><div id="bar"></div><h2 id="qq"></h2><div id="qo"></div><div id="qf" style="font-weight:700;min-height:1.3em"></div></div></div>
+<div id="end" class="scr"><div class="card" id="endc" style="text-align:center"></div></div>
+</section>
+
+<section id="adm" class="scr"><div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center"><h1>🧑‍🏫 Teacher Panel</h1><button class="btn ghost" onclick="location.reload()">Log out</button></div>
+<div class="tabs"><button class="btn" onclick="tab('dash')">📊 Dashboard</button><button class="btn" onclick="tab('qs')">❓ Questions</button><button class="btn" onclick="tab('set')">⚙️ Settings</button></div>
+<div id="t_dash"></div>
+<div id="t_qs" style="display:none"><div id="ql"></div><h2 id="qh">Add question</h2>
+<textarea id="eq" style="height:60px;font-family:inherit;font-size:1rem" placeholder="Question"></textarea>
+<input id="o0" placeholder="Option A"><input id="o1" placeholder="Option B"><input id="o2" placeholder="Option C"><input id="o3" placeholder="Option D">
+<select id="oc"><option value="0">Correct: A</option><option value="1">Correct: B</option><option value="2">Correct: C</option><option value="3">Correct: D</option></select>
+<button class="btn" id="qsv">💾 Save question</button><button class="btn ghost" id="qcl">Clear</button><div class="sub">Tip: add at least 4 questions (one per checkpoint).</div></div>
+<div id="t_set" style="display:none">
+<h2>Active quiz token</h2><input id="tk"><button class="btn" id="tks">Save token</button><button class="btn ghost" id="tkr">🎲 Random</button>
+<h2>Admin password</h2><input id="pw" type="password" placeholder="New password"><button class="btn" id="pws">Change password</button>
+<h2>Google Apps Script Web App URL</h2><input id="url" placeholder="https://script.google.com/macros/s/.../exec"><button class="btn" id="urs">Save URL</button>
+<div class="sub">Setup: open the Google Sheet of humas.mtsn8muarojambi@gmail.com → Extensions → Apps Script → paste the code below → Deploy → Web app → Execute as: Me, Access: Anyone → copy the URL here (or put it in DEFAULT_URL in the file so every student device uses it).</div>
+<textarea id="gs" readonly>function doPost(e){
+ var d=JSON.parse(e.postData.contents),P=PropertiesService.getScriptProperties();
+ if(d.action==='config'){P.setProperty('cfg',JSON.stringify(d.cfg));return out({ok:1});}
+ var sh=sheet(),r=d.row,ids=sh.getRange(1,1,Math.max(sh.getLastRow(),1),1).getValues(),i;
+ var v=[r.id,r.time,r.name,r.cls,r.token,r.stage,r.correct,r.wrong,r.seconds,r.score,r.status];
+ for(i=1;i!==ids.length;i++){if(ids[i][0]===r.id){sh.getRange(i+1,1,1,v.length).setValues([v]);return out({ok:1});}}
+ sh.appendRow(v);return out({ok:1});
+}
+function doGet(e){
+ var a=e.parameter.action;
+ if(a==='config'){return out(JSON.parse(PropertiesService.getScriptProperties().getProperty('cfg')||'{}'));}
+ var v=sheet().getDataRange().getValues(),k=['id','time','name','cls','token','stage','correct','wrong','seconds','score','status'],rows=[];
+ for(var i=1;i!==v.length;i++){var o={};k.forEach(function(x,j){o[x]=v[i][j]});rows.push(o);}
+ return out({rows:rows});
+}
+function sheet(){var s=SpreadsheetApp.getActiveSpreadsheet(),h=s.getSheetByName('Results');
+ if(!h){h=s.insertSheet('Results');h.appendRow(['ID','Time','Name','Class','Token','Stage (of 4)','Correct','Wrong','Seconds','Score','Status']);h.getRange('D:E').setNumberFormat('@');}return h;}
+function out(o){return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);}</textarea>
+<div class="msg" id="sm" style="color:var(--ok)"></div></div>
+</div></section>
+
+<script>
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbz6ip3IKbULYxXZPUY1By2WzMCzjuSCYhOex-QjE86asj_ne3Mw7CLf8J8fMZIZWqZQ/exec';
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS={g(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},s(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const DQ=[['What is 12 x 7?','74','84','82','96',1],['What is 3/4 + 1/4?','1','4/8','3/16','1/2',0],['What is the value of 5² + 3²?','16','30','34','64',2],['Solve: 2x + 6 = 20. What is x?','7','8','10','13',0],['What is 15% of 200?','20','25','30','35',2],['What is the area of a rectangle 9 cm by 6 cm?','15 cm²','30 cm²','54 cm²','45 cm²',2],['What is the next prime number after 7?','9','11','13','8',1],['What is √144?','10','11','12','14',2]];
+let CFG=LS.g('ti_cfg',null)||{pw:'admin123',token:'ISLAND1',url:'',qs:DQ.map(a=>({q:a[0],o:a.slice(1,5),c:a[5]}))};
+const URLX=()=>CFG.url||DEFAULT_URL;
+async function post(o){const u=URLX();if(!u)return;try{await fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(o)})}catch(e){}}
+async function getJ(q){const u=URLX();if(!u)return null;try{const r=await fetch(u+'?'+q);return await r.json()}catch(e){return null}}
+const show=id=>document.querySelectorAll('.scr:not(#end)').forEach(e=>{e.classList.toggle('on',e.id===id);e.style.display=e.id===id?'flex':'none'});
+const saveCfg=()=>{LS.s('ti_cfg',CFG);post({action:'config',cfg:{token:CFG.token,qs:CFG.qs}})};
+$('#bd').textContent=URLX()?'☁️ Cloud sync: ON':'💾 Local mode (set the Apps Script URL in Teacher › Settings)';
+$('#tS').onclick=()=>{$('#fS').style.display='';$('#fA').style.display='none'};
+$('#tA').onclick=()=>{$('#fA').style.display='';$('#fS').style.display='none'};
+$('#al').onclick=()=>{if($('#ap').value===CFG.pw){show('adm');tab('dash')}else $('#lm').textContent='Wrong password.'};
+
+/* ---------- STUDENT LOGIN & SYNC ---------- */
+let G=null;
+$('#go').onclick=async()=>{
+ const n=$('#sn').value.trim(),c=$('#sc').value.trim(),t=$('#st').value.trim().toUpperCase();
+ if(!n||!c||!t)return $('#lm').textContent='Please fill in name, class and token.';
+ $('#go').disabled=true;const rc=await getJ('action=config');$('#go').disabled=false;
+ if(rc&&rc.token){CFG.token=rc.token;if(rc.qs&&rc.qs.length)CFG.qs=rc.qs}
+ if(t!==String(CFG.token).toUpperCase())return $('#lm').textContent='Invalid token. Ask your teacher.';
+ if(!CFG.qs.length)return $('#lm').textContent='No questions yet.';
+ G={id:'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:n,cls:c,token:t,stage:0,correct:0,wrong:0,score:0,gems:0,t0:Date.now(),status:'Login'};
+ sync('Login');startGame();
+};
+function sync(status){G.status=status;const r={id:G.id,time:new Date().toLocaleString(),name:G.name,cls:G.cls,token:G.token,stage:G.stage,correct:G.correct,wrong:G.wrong,seconds:Math.round((Date.now()-G.t0)/1000),score:G.score,status};
+ const a=LS.g('ti_rows',[]),i=a.findIndex(x=>x.id===r.id);if(i<0)a.push(r);else a[i]=r;LS.s('ti_rows',a);post({action:'row',row:r})}
+
+/* ---------- 3D WORLD ---------- */
+const ZN=[['🏖️ Sunny Beach',0xf2d38a,0x8fd3ff],['🌴 Whispering Jungle',0x3f9b4a,0x9fe0b0],['🦇 Crystal Cave',0x6e6578,0x1c1826],['👑 Treasure Vault',0xc9a24a,0x2b1d10]];
+const TIERS=[[250,'🎩 Pirate Hat'],[450,'🧣 Hero Cape'],[650,'👑 Golden Crown']];
+let R,S,C,P,clock,GT=[],K={},JX=0,JY=0,quizOpen=false,done=false,curZone=-1,skyC,fogT,hat,cape,crown,booted=false;
+const M=(c)=>new THREE.MeshLambertMaterial({color:c});
+function mesh(g,c,x,y,z,p){const m=new THREE.Mesh(g,M(c));m.position.set(x,y,z);(p||S).add(m);return m}
+const box=(w,h,d,c,x,y,z,p)=>mesh(new THREE.BoxGeometry(w,h,d),c,x,y,z,p);
+const cone=(r,h,c,x,y,z)=>mesh(new THREE.ConeGeometry(r,h,7),c,x,y,z);
+function deco(i,x,z){
+ if(i==0){box(.5,5,.5,0x8b5a2b,x,2.5,z);const l=mesh(new THREE.SphereGeometry(2.3,8,6),0x2e9b3a,x,5.3,z);l.scale.y=.4}
+ else if(i==1){box(.6,3,.6,0x6b4a2a,x,1.5,z);cone(2.4,5,0x1f7a2e,x,5,z);cone(1.8,4,0x2b9a3c,x,7.5,z)}
+ else if(i==2){cone(1.2,5+Math.random()*3,0x8a8196,x,2.5,z)}
+ else{const g=mesh(new THREE.SphereGeometry(2,8,6),0xffd54a,x,0,z);g.scale.y=.6;box(.5,.1,.5,0xfff2a0,x+1,1.1,z)}}
+function build(){
+ skyC=new THREE.Color(ZN[0][2]);fogT=new THREE.Color(ZN[0][2]);S.background=skyC;S.fog=new THREE.Fog(skyC,30,120);
+ box(500,1,600,0x1e90c8,0,-1.2,-120);
+ ZN.forEach((z,i)=>{box(30,1,60,z[1],0,-.5,-30-i*60);for(let k=0;k<16;k++)deco(i,(Math.random()<.5?-1:1)*(8+Math.random()*6),-i*60-Math.random()*58)});
+ box(30,1,120,0x2a2430,0,16,-150);
+ for(let k=0;k<6;k++){const l=new THREE.PointLight(0xffa040,.8,38);l.position.set(k%2?-10:10,4,-125-k*9);S.add(l);box(.6,.6,.6,0xffa040,l.position.x,4,l.position.z)}
+ const dc=[0x8b5a2b,0x2f7d32,0x555060];
+ for(let i=0;i<3;i++){const g=new THREE.Group();box(30,8,1,dc[i],0,4,0,g);box(1.2,10,1.4,0x333333,-14.5,5,0,g);box(1.2,10,1.4,0x333333,14.5,5,0,g);g.position.z=-(i+1)*60+3;S.add(g);GT.push({z:g.position.z,g,t:0,open:false,i})}
+ const g=new THREE.Group();box(4,2,2.4,0x8b5a2b,0,1,0,g);const lid=new THREE.Group();lid.position.set(0,2,-1.2);box(4,.7,2.4,0xe0a800,0,.35,1.2,lid);g.add(lid);g.position.z=-233;S.add(g);GT.push({z:-228,g,lid,t:0,open:false,i:3});
+ P=new THREE.Group();box(.9,1.3,.6,0x1a73e8,0,1.2,0,P);mesh(new THREE.SphereGeometry(.45,12,10),0xf2c9a0,0,2.3,0,P);box(.12,.12,.1,0x000,-.17,2.35,.4,P);box(.12,.12,.1,0x000,.17,2.35,.4,P);box(.3,.7,.3,0x333,-.25,.35,0,P);box(.3,.7,.3,0x333,.25,.35,0,P);
+ hat=new THREE.Group();mesh(new THREE.CylinderGeometry(.62,.62,.12,12),0x222222,0,2.7,0,hat);mesh(new THREE.CylinderGeometry(.4,.45,.35,12),0x222222,0,2.9,0,hat);P.add(hat);
+ cape=box(1.1,1.5,.1,0xc62828,0,1.3,-.38,P);
+ crown=new THREE.Group();mesh(new THREE.CylinderGeometry(.42,.38,.3,8),0xffd700,0,2.85,0,crown);for(let k=0;k<4;k++)mesh(new THREE.ConeGeometry(.1,.3,4),0xffd700,Math.cos(k*1.57)*.36,3.1,Math.sin(k*1.57)*.36,crown);P.add(crown);
+ hat.visible=cape.visible=crown.visible=false;P.position.set(0,0,0);S.add(P);
+ S.add(new THREE.HemisphereLight(0xffffff,0x667766,.85));const sun=new THREE.DirectionalLight(0xffffff,.7);sun.position.set(20,40,10);S.add(sun)}
+function resize(){if(!R)return;R.setSize(innerWidth,innerHeight,false);C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix()}
+function startGame(){
+ show('game');
+ if(!booted){booted=true;R=new THREE.WebGLRenderer({canvas:$('#cv'),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));S=new THREE.Scene();C=new THREE.PerspectiveCamera(60,1,.1,300);build();clock=new THREE.Clock();addEventListener('resize',resize);loop()}
+ resize();pool=CFG.qs.slice().sort(()=>Math.random()-.5);hud();rewards(true);toast(ZN[0][0])}
+addEventListener('keydown',e=>{K[e.code]=1;if(e.code.startsWith('Arrow'))e.preventDefault()});addEventListener('keyup',e=>K[e.code]=0);
+const joy=$('#joy'),kn=$('#knob');
+function jm(e){const r=joy.getBoundingClientRect();let x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2);const l=Math.hypot(x,y);if(l>1){x/=l;y/=l}JX=x;JY=y;kn.style.transform='translate('+x*36+'px,'+y*36+'px)'}
+joy.onpointerdown=e=>{joy.setPointerCapture(e.pointerId);jm(e)};joy.onpointermove=e=>{if(joy.hasPointerCapture(e.pointerId))jm(e)};joy.onpointerup=joy.onpointercancel=()=>{JX=JY=0;kn.style.transform=''};
+function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,1800)}
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+function hud(){$('#hn').textContent='🧭 '+G.name;$('#hs').textContent='⭐ '+G.score;$('#hc').textContent='✔ '+G.correct+'  ✖ '+G.wrong;$('#hg').textContent='💎 '+G.gems+'  🗺️ '+G.stage+'/4'}
+function rewards(quiet){const got=TIERS.filter(t=>G.score>=t[0]);hat.visible=G.score>=250;cape.visible=G.score>=450;crown.visible=G.score>=650;
+ const prev=$('#tray').children.length;$('#tray').innerHTML=got.map(t=>'<div>'+t[1]+'</div>').join('');if(!quiet&&got.length>prev)toast('🎁 New reward: '+got[got.length-1][1])}
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;if(!G)return;
+ let moving=false;
+ if(!quizOpen&&!done){let dx=(K.ArrowRight||K.KeyD?1:0)-(K.ArrowLeft||K.KeyA?1:0)+JX,dz=(K.ArrowDown||K.KeyS?1:0)-(K.ArrowUp||K.KeyW?1:0)+JY;const l=Math.hypot(dx,dz);if(l>1){dx/=l;dz/=l}
+  P.position.x=Math.max(-13,Math.min(13,P.position.x+dx*10*dt));let nz=Math.min(3,P.position.z+dz*10*dt);const g=GT[G.stage];if(g)nz=Math.max(nz,g.z+1.5);P.position.z=nz;
+  if(l>.08){moving=true;P.rotation.y=Math.atan2(dx,dz)}
+  if(g&&!g.open&&P.position.z<g.z+7)openQuiz()}
+ P.position.y=moving?Math.abs(Math.sin(t*12))*.18:0;
+ const zi=Math.min(3,Math.max(0,Math.floor(-P.position.z/60)));if(zi!==curZone){curZone=zi;fogT.setHex(ZN[zi][2]);$('#hz').textContent=ZN[zi][0];if(t>1)toast(ZN[zi][0])}
+ skyC.lerp(fogT,.04);
+ GT.forEach(o=>{if(o.open&&o.t<1){o.t=Math.min(1,o.t+dt*.6);if(o.i<3){o.g.position.y=o.t*10;if(o.t==1)o.g.visible=false}else o.lid.rotation.x=-o.t*1.3}});
+ C.position.lerp(new THREE.Vector3(P.position.x*.7,7,P.position.z+11),.12);C.lookAt(P.position.x*.7,1.5,P.position.z-6);
+ $('#ht').textContent='⏱ '+fmt(Math.round((Date.now()-G.t0)/1000));R.render(S,C)}
+
+/* ---------- QUIZ ---------- */
+let pool=[],pi=0,cur,qt0=0,lock=false;
+function openQuiz(){quizOpen=true;lock=false;cur=pool[pi++%pool.length];qt0=performance.now();
+ $('#qs').textContent='Checkpoint '+(G.stage+1)+' of 4 • answer fast for bonus gems!';$('#qq').textContent=cur.q;$('#qf').textContent='';
+ $('#qo').innerHTML=cur.o.map((o,i)=>'<button class="btn opt" data-i="'+i+'">'+'ABCD'[i]+'. '+esc(o)+'</button>').join('');
+ const b=$('#bar');b.style.transition='none';b.style.width='100%';void b.offsetWidth;b.style.transition='width 20s linear';b.style.width='0%';$('#quiz').style.display='flex'}
+$('#qo').onclick=e=>{const b=e.target.closest('.opt');if(b)answer(+b.dataset.i)};
+function answer(i){if(lock)return;lock=true;const el=(performance.now()-qt0)/1000,ok=i===+cur.c,btn=$('#qo').children[i],gi=G.stage;
+ btn.style.background=ok?'#2e9b3a':'#d8453a';btn.style.color='#fff';
+ if(ok){const bonus=Math.round(100*Math.max(0,1-el/20)),gem=Math.round(bonus/10);G.correct++;G.score+=100+bonus;G.gems+=gem;G.stage++;$('#qf').textContent='✅ Correct! +100 +'+bonus+' speed bonus  (💎 +'+gem+')'}
+ else{G.wrong++;$('#qf').textContent='❌ Not quite. Get ready for another question!'}
+ sync(G.stage==4?'Finished':'Playing');hud();
+ setTimeout(()=>{$('#quiz').style.display='none';quizOpen=false;
+  if(ok){GT[gi].open=true;rewards();if(G.stage==4){done=true;setTimeout(finish,2600)}}else P.position.z=GT[gi].z+9},1600)}
+function finish(){const sec=Math.round((Date.now()-G.t0)/1000),got=TIERS.filter(t=>G.score>=t[0]);
+ $('#endc').innerHTML='<h1>🏆 Treasure Found!</h1><h2>'+esc(G.name)+' • '+esc(G.cls)+'</h2><div class="grid"><div class="stat"><b>'+G.score+'</b>Final score</div><div class="stat"><b>'+G.correct+' / '+G.wrong+'</b>Correct / wrong</div><div class="stat"><b>'+fmt(sec)+'</b>Time</div><div class="stat"><b>💎 '+G.gems+'</b>Gems</div></div><h2>Rewards unlocked</h2><div style="font-size:1.3rem">'+(got.length?got.map(t=>t[1]).join('<br>'):'Keep practising to earn a costume!')+'</div><p class="sub">Your result was saved for your teacher.</p><button class="btn" onclick="location.reload()">Play again</button>';
+ $('#end').classList.add('on');$('#end').style.display='flex'}
+
+/* ---------- ADMIN ---------- */
+let ROWS=[];
+function tab(n){['dash','qs','set'].forEach(k=>$('#t_'+k).style.display=k==n?'block':'none');if(n=='dash')dash();if(n=='qs')qlist();if(n=='set'){$('#tk').value=CFG.token;$('#url').value=CFG.url||''}}
+async function dash(){const r=await getJ('action=list');ROWS=r&&r.rows?r.rows:LS.g('ti_rows',[]);
+ const n=ROWS.length,sum=(f)=>ROWS.reduce((s,x)=>s+(+x[f]||0),0),top=ROWS.slice().sort((a,b)=>b.score-a.score)[0],tc=sum('correct'),tw=sum('wrong'),fin=ROWS.filter(x=>x.status=='Finished').length,cl={};
+ ROWS.forEach(x=>{(cl[x.cls]=cl[x.cls]||[]).push(+x.score||0)});
+ $('#t_dash').innerHTML='<div class="grid"><div class="stat"><b>'+n+'</b>Players</div><div class="stat"><b>'+fin+'</b>Finished</div><div class="stat"><b>'+(n?Math.round(sum('score')/n):0)+'</b>Average score</div><div class="stat"><b>'+(top?esc(top.name)+' ('+top.score+')':'-')+'</b>Highest scorer</div><div class="stat"><b>'+(tc+tw?Math.round(100*tc/(tc+tw)):0)+'%</b>Accuracy</div></div>'
+ +'<p class="sub">Class averages: '+(Object.keys(cl).map(k=>esc(k)+' = '+Math.round(cl[k].reduce((a,b)=>a+b,0)/cl[k].length)).join(' • ')||'-')+' • Source: '+(URLX()?'Google Sheet (live, refreshes every 10s)':'this browser (local mode)')+'</p>'
+ +'<button class="btn" onclick="dash()">🔄 Refresh</button><button class="btn alt" onclick="dl()">⬇️ Export Excel/CSV</button><button class="btn ghost" onclick="cp()">📋 Copy CSV</button><div class="tw"><table><tr><th>Name</th><th>Class</th><th>Token</th><th>Stage</th><th>✔</th><th>✖</th><th>Sec</th><th>Score</th><th>Status</th></tr>'
+ +ROWS.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.cls)+'</td><td>'+esc(x.token)+'</td><td>'+esc(x.stage)+'/4</td><td>'+esc(x.correct)+'</td><td>'+esc(x.wrong)+'</td><td>'+esc(x.seconds)+'</td><td>'+esc(x.score)+'</td><td>'+esc(x.status)+'</td></tr>').join('')+'</table></div>'}
+setInterval(()=>{if($('#adm').classList.contains('on')&&$('#t_dash').style.display!='none')dash()},10000);
+function csv(){const h=['Time','Name','Class','Token','Stage','Correct','Wrong','Seconds','Score','Status'],k=['time','name','cls','token','stage','correct','wrong','seconds','score','status'],q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';return [h.map(q).join(',')].concat(ROWS.map(r=>k.map(f=>q(r[f])).join(','))).join('\r\n')}
+function dl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv()],{type:'text/csv'}));a.download='treasure-island-results.csv';a.click()}
+function cp(){const t=document.createElement('textarea');t.value=csv();document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(e){}t.remove();alert('CSV copied. Paste it into Excel or Sheets.')}
+let eIdx=-1;
+function qlist(){$('#ql').innerHTML=CFG.qs.map((q,i)=>'<div class="stat" style="text-align:left;margin:4px 0"><b style="font-size:1rem">'+(i+1)+'. '+esc(q.q)+'</b><span class="sub">'+q.o.map((o,j)=>(j==q.c?'✅ ':'')+esc(o)).join(' | ')+'</span><br><button class="btn ghost" onclick="qe('+i+')">Edit</button><button class="btn red" onclick="qd('+i+')">Delete</button></div>').join('')||'<p>No questions yet.</p>'}
+window.qe=i=>{eIdx=i;const q=CFG.qs[i];$('#eq').value=q.q;q.o.forEach((o,j)=>$('#o'+j).value=o);$('#oc').value=q.c;$('#qh').textContent='Edit question '+(i+1)};
+window.qd=i=>{if(confirm('Delete this question?')){CFG.qs.splice(i,1);saveCfg();qlist()}};
+$('#qcl').onclick=()=>{eIdx=-1;['eq','o0','o1','o2','o3'].forEach(i=>$('#'+i).value='');$('#qh').textContent='Add question'};
+$('#qsv').onclick=()=>{const o=[0,1,2,3].map(i=>$('#o'+i).value.trim()),q=$('#eq').value.trim();if(!q||o.some(x=>!x))return alert('Fill in the question and all 4 options.');const it={q,o,c:+$('#oc').value};if(eIdx<0)CFG.qs.push(it);else CFG.qs[eIdx]=it;saveCfg();$('#qcl').click();qlist()};
+const ok=m=>{$('#sm').textContent=m;setTimeout(()=>$('#sm').textContent='',2500)};
+$('#tks').onclick=()=>{CFG.token=$('#tk').value.trim().toUpperCase();saveCfg();ok('Token saved: '+CFG.token)};
+$('#tkr').onclick=()=>{$('#tk').value=Math.random().toString(36).slice(2,8).toUpperCase()};
+$('#pws').onclick=()=>{if($('#pw').value.length<4)return ok('Use at least 4 characters.');CFG.pw=$('#pw').value;LS.s('ti_cfg',CFG);$('#pw').value='';ok('Password changed (this browser).')};
+$('#urs').onclick=()=>{CFG.url=$('#url').value.trim();saveCfg();ok('URL saved.')};
+</script></body></html>

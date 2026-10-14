@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Space Explorer: Math Galaxy Quiz Edition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{color-scheme:dark;--ink:#e8f6ff;--card:rgba(10,14,48,.94);--cy:#00e5ff;--mg:#ff2bd6;--yl:#ffd23f;--gn:#39ff88;--bad:#ff3355;--line:#27335f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{position:relative;font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;background:radial-gradient(circle at 30% 20%,#1a1050,#05061a 70%);color:var(--ink);overflow:hidden}
+@media(min-width:1600px){html{font-size:20px}}
+.scr{display:none;position:absolute;inset:0;overflow:auto;align-items:center;justify-content:center;padding:14px}
+.scr.on{display:flex}#adm{align-items:flex-start}
+.card{background:var(--card);border:2px solid var(--cy);border-radius:18px;padding:20px;max-width:560px;width:100%;box-shadow:0 0 24px rgba(0,229,255,.35)}
+#adm .card{max-width:1000px}
+h1{margin:0 0 4px;font-size:1.5rem;color:var(--cy);text-shadow:0 0 12px var(--cy)}h2{margin:12px 0 6px}
+.btn{background:linear-gradient(135deg,#00b8d4,#7b2cff);color:#fff;border:0;border-radius:12px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer;min-height:44px;margin:2px}
+.btn.alt{background:linear-gradient(135deg,#00c27a,#00a3c4)}.btn.red{background:var(--bad)}.btn.ghost{background:var(--line)}
+input,select,textarea{width:100%;padding:10px;border-radius:10px;border:2px solid var(--line);background:#0a0f33;color:var(--ink);font:inherit;margin:4px 0 10px}
+textarea{font-family:monospace;font-size:12px;height:150px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.msg{color:var(--bad);font-weight:700;min-height:1.2em}.sub{opacity:.75;font-size:.85rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stat{background:#141c4d;border-radius:12px;padding:10px;text-align:center}.stat b{display:block;font-size:1.3rem}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.85rem}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#hud{position:absolute;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:6px;padding:8px;pointer-events:none}
+.chip{background:rgba(5,8,40,.75);border:1px solid var(--cy);color:#fff;border-radius:999px;padding:5px 12px;font-weight:700}
+#tray{position:absolute;left:10px;top:54px;font-weight:700;text-shadow:0 0 6px #000}
+#toast{position:absolute;top:30%;left:0;right:0;text-align:center;font-size:2rem;font-weight:800;color:var(--cy);text-shadow:0 0 14px var(--cy);opacity:0;transition:opacity .5s;pointer-events:none}
+#hint{position:absolute;bottom:10px;right:14px;font-weight:700;text-shadow:0 0 6px #000;font-size:.85rem}
+#dpad{position:absolute;left:16px;bottom:16px;display:none;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px);gap:4px;touch-action:none}
+#dpad button{border-radius:14px;border:2px solid var(--cy);background:rgba(0,229,255,.18);color:#fff;font-size:1.3rem;touch-action:none}
+#dpad [data-k=u]{grid-area:1/2}#dpad [data-k=l]{grid-area:2/1}#dpad [data-k=r]{grid-area:2/3}#dpad [data-k=d]{grid-area:3/2}
+@media(pointer:coarse){#dpad{display:grid}}body.q #dpad{display:none!important}
+#quiz{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,3,20,.7);padding:10px;overflow:auto;z-index:5}
+#qgrid{display:grid;gap:10px;width:min(1000px,100%);grid-template-columns:minmax(130px,1fr) minmax(0,2fr) minmax(130px,1fr);grid-template-areas:". up ." "lf q rt" ". dn ."}
+@media(max-width:800px){#qgrid{grid-template-columns:1fr 1fr;grid-template-areas:"q q" "up up" "lf rt" "dn dn"}}
+#qcard{grid-area:q;background:var(--card);border:2px solid var(--cy);border-radius:16px;padding:14px;box-shadow:0 0 22px rgba(0,229,255,.4)}
+#qcard h2{margin:8px 0;font-size:1.15rem}#qf{font-weight:700;min-height:1.3em}
+#bar{height:8px;border-radius:6px;background:linear-gradient(90deg,var(--mg),var(--cy));width:100%}
+.pt{--c:var(--cy);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:68px;padding:10px;border-radius:16px;border:2px solid var(--c);background:rgba(10,14,48,.9);color:var(--ink);font:inherit;cursor:pointer;box-shadow:0 0 14px var(--c);text-align:center;overflow-wrap:anywhere}
+.pt .ar{font-size:1.3rem;color:var(--c)}.pt b{color:var(--c)}
+.up{grid-area:up;--c:#00e5ff}.dn{grid-area:dn;--c:#ff2bd6}.lf{grid-area:lf;--c:#ffd23f}.rt{grid-area:rt;--c:#39ff88}
+.pt.good{background:rgba(57,255,136,.35)}.pt.bad{background:rgba(255,51,85,.4)}
+</style></head><body>
+
+<section id="login" class="scr on"><div class="card">
+<h1>🚀 SPACE EXPLORER</h1><div class="sub">Math Galaxy Quiz Edition • MTsN 8 Muaro Jambi • Grade 8</div>
+<div class="tabs"><button class="btn" id="tS">👨‍🚀 Student</button><button class="btn ghost" id="tA">🔐 Teacher</button></div>
+<div id="fS"><input id="sn" placeholder="Pilot name" autocomplete="off"><input id="sc" placeholder="Class (e.g. VIII-A)" autocomplete="off"><input id="st" placeholder="Mission token from your teacher" autocomplete="off">
+<button class="btn" id="go" style="width:100%">🛰️ Launch Mission</button></div>
+<div id="fA" style="display:none"><input id="ap" type="password" placeholder="Admin password"><button class="btn alt" id="al" style="width:100%">Open Admin Panel</button></div>
+<div class="msg" id="lm"></div><div class="sub" id="bd"></div></div></section>
+
+<section id="game" class="scr" style="padding:0;display:none">
+<canvas id="cv"></canvas>
+<div id="hud"><span class="chip" id="hn"></span><span class="chip" id="hz"></span><span class="chip" id="hg"></span><span class="chip" id="hs"></span><span class="chip" id="hc"></span><span class="chip" id="he"></span><span class="chip" id="ht"></span></div>
+<div id="tray"></div><div id="toast"></div>
+<div id="dpad"><button data-k="u">▲</button><button data-k="l">◀</button><button data-k="r">▶</button><button data-k="d">▼</button></div>
+<div id="hint">Steer: arrows / WASD / drag • At a gate: ▲ A  ▼ B  ◀ C  ▶ D</div>
+<div id="quiz"><div id="qgrid">
+<button class="pt up" data-i="0" data-d="up"></button><button class="pt lf" data-i="2" data-d="lf"></button>
+<div id="qcard"><div class="sub" id="qs"></div><div id="bar"></div><h2 id="qq"></h2><div id="qf"></div></div>
+<button class="pt rt" data-i="3" data-d="rt"></button><button class="pt dn" data-i="1" data-d="dn"></button></div></div>
+<div id="end" class="scr"><div class="card" id="endc" style="text-align:center"></div></div>
+</section>
+
+<section id="adm" class="scr"><div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center"><h1>🧑‍🏫 Teacher Panel</h1><button class="btn ghost" onclick="location.reload()">Log out</button></div>
+<div class="tabs"><button class="btn" onclick="tab('dash')">📊 Dashboard</button><button class="btn" onclick="tab('qs')">❓ Questions</button><button class="btn" onclick="tab('set')">⚙️ Settings</button></div>
+<div id="t_dash"></div>
+<div id="t_qs" style="display:none"><div id="ql"></div><h2 id="qh">Add question</h2>
+<textarea id="eq" style="height:60px;font-family:inherit;font-size:1rem" placeholder="Question"></textarea>
+<input id="o0" placeholder="Option A"><input id="o1" placeholder="Option B"><input id="o2" placeholder="Option C"><input id="o3" placeholder="Option D">
+<select id="oc"><option value="0">Correct: A</option><option value="1">Correct: B</option><option value="2">Correct: C</option><option value="3">Correct: D</option></select>
+<button class="btn" id="qsv">💾 Save question</button><button class="btn ghost" id="qcl">Clear</button><button class="btn alt" id="qrs">📥 Load ASAS Math Grade 8 (35 questions)</button><div class="sub">Tip: keep at least 4 questions; the game draws random ones from this bank.</div></div>
+<div id="t_set" style="display:none">
+<h2>Active quiz token</h2><input id="tk"><button class="btn" id="tks">Save token</button><button class="btn ghost" id="tkr">🎲 Random</button>
+<h2>Admin password</h2><input id="pw" type="password" placeholder="New password"><button class="btn" id="pws">Change password</button>
+<h2>Google Apps Script Web App URL</h2><input id="url" placeholder="https://script.google.com/macros/s/.../exec"><button class="btn" id="urs">Save URL</button>
+<div class="sub">Setup: open the Google Sheet of humas.mtsn8muarojambi@gmail.com → Extensions → Apps Script → paste the code below → Deploy → Web app → Execute as: Me, Access: Anyone → copy the URL here (or put it in DEFAULT_URL in the file so every student device uses it).</div>
+<textarea id="gs" readonly>function doPost(e){
+ var d=JSON.parse(e.postData.contents),P=PropertiesService.getScriptProperties();
+ if(d.action==='config'){P.setProperty('cfg',JSON.stringify(d.cfg));return out({ok:1});}
+ var sh=sheet(),r=d.row,ids=sh.getRange(1,1,Math.max(sh.getLastRow(),1),1).getValues(),i;
+ var v=[r.id,r.time,r.name,r.cls,r.token,r.stage,r.correct,r.wrong,r.seconds,r.score,r.status];
+ for(i=1;i!==ids.length;i++){if(ids[i][0]===r.id){sh.getRange(i+1,1,1,v.length).setValues([v]);return out({ok:1});}}
+ sh.appendRow(v);return out({ok:1});
+}
+function doGet(e){
+ var a=e.parameter.action;
+ if(a==='config'){return out(JSON.parse(PropertiesService.getScriptProperties().getProperty('cfg')||'{}'));}
+ var v=sheet().getDataRange().getValues(),k=['id','time','name','cls','token','stage','correct','wrong','seconds','score','status'],rows=[];
+ for(var i=1;i!==v.length;i++){var o={};k.forEach(function(x,j){o[x]=v[i][j]});rows.push(o);}
+ return out({rows:rows});
+}
+function sheet(){var s=SpreadsheetApp.getActiveSpreadsheet(),h=s.getSheetByName('Results');
+ if(!h){h=s.insertSheet('Results');h.appendRow(['ID','Time','Name','Class','Token','Stage (of 4)','Correct','Wrong','Seconds','Score','Status']);h.getRange('D:E').setNumberFormat('@');}return h;}
+function out(o){return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);}</textarea>
+<div class="msg" id="sm" style="color:var(--ok)"></div></div>
+</div></section>
+
+
+
+<script>
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbz6ip3IKbULYxXZPUY1By2WzMCzjuSCYhOex-QjE86asj_ne3Mw7CLf8J8fMZIZWqZQ/exec';
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS={g(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},s(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+/* DQ rows: question, A, B, C, D, correct index (0=A..3=D), points from the official key */
+const DQ=[["Bentuk sederhana dari operasi 2³ × 4² × 8⁻¹ adalah ...", "2²", "2⁶", "16", "32", 2, 3], ["Bentuk sederhana dari a⁸ / (a³ × a²) adalah ...", "a³", "a⁴", "a¹⁰", "a¹³", 0, 3], ["Nilai dari 3⁻² + 9⁰ adalah ...", "10", "1 1/9", "1", "1/9", 1, 3], ["Bentuk sederhana dari (p³q⁻²)⁴ dalam bentuk pangkat positif adalah ...", "p⁷/q²", "p¹²/q⁸", "p¹²q⁸", "p¹²q⁻⁸", 1, 3], ["Bentuk akar yang ekuivalen dengan 2^(−3/4) adalah ...", "⁴√(2³)", "³√(2⁴)", "1 / ⁴√(2³)", "−⁴√(2³)", 2, 3], ["Bentuk yang paling sederhana dari √150 adalah ...", "25√6", "10√15", "15√10", "5√6", 3, 3], ["Hasil dari operasi 3√8 − √50 + √2 adalah ...", "√4", "4√2", "2√6", "2√2", 3, 3], ["Hasil dari (2√6)² adalah ...", "12", "12√6", "24", "4√36", 2, 3], ["Bentuk rasional 12 / (2√3) adalah ...", "1 / (2√3)", "√3", "2√3", "4√3", 2, 3], ["Penulisan notasi ilmiah (bentuk baku) yang benar untuk bilangan 58.700.000.000 adalah ...", "58,7 × 10⁹", "5,87 × 10⁹", "5,87 × 10⁻¹⁰", "5,87 × 10¹⁰", 3, 3], ["Bentuk desimal dari 2,75 × 10⁻³ adalah ...", "275.000", "27.500", "0,0275", "0,00275", 3, 3], ["Pada segitiga siku-siku DEF (siku-siku di F), sisi d = EF, sisi e = DF, dan sisi f = DE (sisi miring). Pernyataan yang benar adalah ...", "e² + d² = f²", "e² + f² = d²", "e² − d² = f²", "d² − f² = e²", 0, 2], ["Sebuah segitiga siku-siku memiliki sisi tegak 12 cm dan 9 cm. Panjang sisi miring (hipotenusa) segitiga tersebut adalah ...", "13 cm", "14 cm", "15 cm", "21 cm", 2, 3], ["Diketahui segitiga siku-siku dengan panjang sisi miring 17 cm dan salah satu sisi tegak 8 cm. Panjang sisi tegak lainnya adalah ...", "25 cm", "23 cm", "15 cm", "9 cm", 2, 3], ["Segitiga yang memiliki panjang sisi 10 cm, 12 cm, dan 15 cm tergolong jenis segitiga ...", "Lancip", "Siku-siku", "Tumpul", "Sama sisi", 0, 3], ["Diantara kelompok bilangan berikut, manakah yang merupakan Triple Pythagoras ...", "4, 5, 7", "6, 8, 10", "7, 24, 26", "5, 12, 14", 1, 3], ["Suatu segitiga PQR siku-siku di P dengan sudut Q = 60º dan panjang QR = 24 cm. Panjang PQ adalah ...", "10 cm", "12 cm", "12√2 cm", "12√3 cm", 1, 3], ["Sebuah segitiga siku-siku memiliki sisi miring 13 cm dan satu sisi tegak 5 cm. Luas segitiga tersebut adalah ...", "65 cm²", "60 cm²", "32,5 cm²", "30 cm²", 3, 3], ["Segitiga PQR sama sisi dengan panjang sisi 12 cm. S terletak tepat di tengah PQ dan RS adalah garis dari R ke S. Panjang RS adalah ...", "3 cm", "3√3 cm", "6 cm", "6√3 cm", 3, 3], ["Sebuah layar TV memiliki lebar 32 inci dan tinggi 24 inci. Ukuran layar TV tersebut (panjang diagonalnya) adalah ...", "36 inci", "40 inci", "56 inci", "64 inci", 1, 3], ["Sebuah tangga sepanjang 26 meter disandarkan pada sebuah tembok. Jika jarak ujung bawah tangga ke tembok adalah 10 meter, maka tinggi tembok yang dicapai tangga adalah ...", "10 meter", "12 meter", "18 meter", "24 meter", 3, 3], ["Hafis berada di puncak menara setinggi 12 m dan mengamati dua mobil M1 dan M2 yang sejajar dengan kaki menara. Jarak M1 ke Hafis 20 m dan jarak M2 ke Hafis 13 m. Jarak kedua mobil tersebut adalah ...", "7 m", "10 m", "11 m", "13 m", 2, 3], ["Kebun berbentuk belah ketupat dengan panjang diagonal 10 m dan 24 m akan dipasang kawat di sekelilingnya sebanyak 3 putaran. Jika harga 1 m kawat Rp5.000,00, maka harga seluruh kawat yang diperlukan adalah ...", "Rp260.000,00", "Rp510.000,00", "Rp580.000,00", "Rp780.000,00", 3, 3], ["Berikut ini yang termasuk kalimat matematika terbuka adalah ...", "Candi Borobudur terletak di Magelang, Jawa Tengah.", "Penjumlahan bilangan x dengan 7 adalah 10.", "Setelah bulan September adalah bulan November.", "Jumlah sudut-sudut pada setiap segitiga adalah 180°", 1, 2], ["Perhatikan kalimat matematika terbuka berikut: (i) x + 3 = 10; (ii) 2x² − 4 = −4; (iii) 3(2a − 1) = 4a + 7; (iv) 2m − 8 ≥ 10; (v) x + 2y = 18. Kalimat terbuka yang termasuk Persamaan Linear Satu Variabel (PLSV) adalah ...", "(i) dan (ii)", "(ii) dan (iv)", "(i) dan (iii)", "(i), (iii) dan (v)", 2, 2], ["Penyelesaian dari 2x + 8 = 20 adalah ...", "2", "6", "8", "10", 1, 3], ["Himpunan penyelesaian dari 2(4x + 6) = 3x − 3 adalah ...", "{−5}", "{−3}", "{3}", "{5}", 1, 3], ["Dina mempunyai buku sebanyak p buah, sedangkan Winda mempunyai buku 4 lebihnya dari buku Dina. Jika jumlah buku mereka 20 buah, model matematika yang benar adalah ...", "p + 4 = 20", "2p + 4 = 20", "p + 8 = 20", "2p + 8 = 20", 1, 3], ["Harga sebuah mesin cetak adalah 5 kali harga sebuah komputer. Harga 5 buah komputer dan 2 buah mesin cetak adalah Rp60.000.000,00. Harga sebuah mesin cetak adalah ...", "Rp4.800.000,00", "Rp12.000.000,00", "Rp20.000.000,00", "Rp24.000.000,00", 2, 3], ["Kalimat terbuka berikut manakah yang merupakan Pertidaksamaan Linear Satu Variabel (PtLSV) ...", "2a + 3 = 10", "5t − 20 ≤ 7a", "9r + 12 ≥ 15", "5r² − 12 ≠ 10", 2, 2], ["Penyelesaian dari 16 − 4a > −4 adalah ...", "a < 4", "a > 4", "a < 5", "a > 5", 2, 3], ["Himpunan penyelesaian dari 3 − 6x ≥ 13 − x untuk x bilangan bulat adalah ...", "{…, −5, −4, −3, −2}", "{−3, −2, −1, 0, …}", "{−2, −1, 0, 1, …}", "{…, −5, −4, −3}", 0, 3], ["Penyelesaian dari 5(x − 1) + 4 ≤ 3x − 7 adalah ...", "x ≤ −8", "x ≤ −3", "x > 8", "x ≥ 3", 1, 3], ["Panjang suatu persegi panjang 15 cm dan lebarnya (3x − 2) cm. Jika luas persegi panjang tidak kurang dari 105 cm², nilai x yang memenuhi adalah ...", "x < 3", "x ≥ 3", "x ≤ 2", "x ≥ 2", 1, 3], ["Batas kecepatan kendaraan yang melaju di jalan tol (k) tidak lebih dari 100 km/jam dan tidak kurang dari 60 km/jam. Pernyataan tersebut dapat ditulis ...", "60 ≤ k ≤ 100", "60 ≤ k < 100", "60 < k ≤ 100", "60 < k < 100", 0, 2]];
+const mk=a=>({q:a[0],o:a.slice(1,5),c:a[5],w:a[6]});
+let CFG=LS.g('sx_cfg',null)||{pw:'admin123',token:'SPACE1',url:'',qs:DQ.map(mk)};
+const URLX=()=>CFG.url||DEFAULT_URL;
+async function post(o){const u=URLX();if(!u)return;try{await fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(o)})}catch(e){}}
+async function getJ(q){const u=URLX();if(!u)return null;try{const r=await fetch(u+'?'+q);return await r.json()}catch(e){return null}}
+const show=id=>document.querySelectorAll('.scr:not(#end)').forEach(e=>{e.classList.toggle('on',e.id===id);e.style.display=e.id===id?'flex':'none'});
+const saveCfg=()=>{LS.s('sx_cfg',CFG);post({action:'config',cfg:{token:CFG.token,qs:CFG.qs}})};
+$('#bd').textContent=URLX()?'☁️ Cloud sync: ON':'💾 Local mode (set the Apps Script URL in Teacher › Settings)';
+$('#tS').onclick=()=>{$('#fS').style.display='';$('#fA').style.display='none'};
+$('#tA').onclick=()=>{$('#fA').style.display='';$('#fS').style.display='none'};
+$('#al').onclick=()=>{if($('#ap').value===CFG.pw){show('adm');tab('dash')}else $('#lm').textContent='Wrong password.'};
+
+/* ---------- STUDENT LOGIN & SYNC ---------- */
+let G=null,N=35;
+$('#go').onclick=async()=>{
+ const n=$('#sn').value.trim(),c=$('#sc').value.trim(),t=$('#st').value.trim().toUpperCase();
+ if(!n||!c||!t)return $('#lm').textContent='Please fill in name, class and token.';
+ $('#go').disabled=true;const rc=await getJ('action=config');$('#go').disabled=false;
+ if(rc&&rc.token){CFG.token=rc.token;if(rc.qs&&rc.qs.length)CFG.qs=rc.qs.map((q,i)=>Object.assign({w:DQ[i]?DQ[i][6]:3},q))}
+ if(t!==String(CFG.token).toUpperCase())return $('#lm').textContent='Invalid token. Ask your teacher.';
+ if(!CFG.qs.length)return $('#lm').textContent='No questions yet.';
+ G={id:'X'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:n,cls:c,token:t,stage:0,qi:0,correct:0,wrong:0,score:0,nilai:0,gems:0,t0:Date.now(),status:'Login'};
+ sync('Login');startGame();
+};
+function sync(status){G.status=status;const r={id:G.id,time:new Date().toLocaleString(),name:G.name,cls:G.cls,token:G.token,stage:G.stage,correct:G.correct,wrong:G.wrong,seconds:Math.round((Date.now()-G.t0)/1000),score:G.score,status};
+ const a=LS.g('sx_rows',[]),i=a.findIndex(x=>x.id===r.id);if(i<0)a.push(r);else a[i]=r;LS.s('sx_rows',a);post({action:'row',row:r})}
+
+/* ---------- 3D SPACE ---------- */
+const SN=['🌍 Earth Station Launch Pad','☄️ Asteroid Belt Navigation','👽 Alien Planet Orbit','🌌 Galaxy Core Vault'];
+const SB=()=>[11,23,29,35].map(x=>Math.round(x*N/35)),secOf=k=>Math.max(0,SB().findIndex(b=>k<b));
+const ML=(c,e)=>new THREE.MeshLambertMaterial({color:c,emissive:e||0}),MB=c=>new THREE.MeshBasicMaterial({color:c});
+let R,S,C,clk,ship,flame,w2,halo,crown,stars,GT=[],AS=[],cores=[],K={},DP={},TX=0,TY=0,mode='fly',v=0,passZ=0,curSec=0,booted=false,done=false,lock=false,qt0=0;
+const plc=(m,z)=>m.position.set((Math.random()<.5?-1:1)*(12+Math.random()*55),(Math.random()-.5)*60,z);
+function build(){
+ S.background=new THREE.Color(0x02030c);S.add(new THREE.AmbientLight(0x8899cc,.8));const sun=new THREE.DirectionalLight(0xffffff,1);sun.position.set(40,50,30);S.add(sun);
+ const n=2200,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*300;pos[i*3+1]=(Math.random()-.5)*180;pos[i*3+2]=60-Math.random()*420}
+ const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(pos,3));stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:1.8,sizeAttenuation:false}));stars.frustumCulled=false;S.add(stars);
+ for(let i=0;i<70;i++){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(1,0),ML(0x8a7d72));m.scale.setScalar(.6+Math.random()*3.5);plc(m,-Math.random()*400);S.add(m);AS.push(m)}
+ const sp=(r,c,e,x,y,z)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),ML(c,e));m.position.set(x,y,z);S.add(m);return m};
+ sp(90,0x2a6fdb,0x0a2a60,-110,-85,-80);
+ const st=new THREE.Group();st.add(new THREE.Mesh(new THREE.TorusGeometry(7,.9,8,24),ML(0xaab4d0,0x222233)));const hub=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,5,12),ML(0xdde4ff));hub.rotation.x=Math.PI/2;st.add(hub);st.position.set(14,-6,-14);st.rotation.x=1.1;S.add(st);
+ const pad=new THREE.Mesh(new THREE.BoxGeometry(18,.5,18),ML(0x2b3a6b,0x10204a));pad.position.set(0,-6,2);S.add(pad);
+ const ap=sp(45,0x7bff6a,0x1a5a1a,75,6,-1800),rg=new THREE.Mesh(new THREE.TorusGeometry(75,2.5,6,60),ML(0xd9a6ff,0x3a1a5a));rg.position.copy(ap.position);rg.rotation.x=1.25;S.add(rg);
+ const core=sp(32,0xffe27a,0xffc933,0,0,-2560);core.material=MB(0xffe27a);
+ [0xff2bd6,0x00e5ff].forEach((c,i)=>{const r=new THREE.Mesh(new THREE.TorusGeometry(55,1.6,8,64),MB(c));r.position.copy(core.position);r.rotation.x=i?.4:1.2;S.add(r);cores.push(r)});
+ ship=new THREE.Group();
+ const bd=new THREE.Mesh(new THREE.ConeGeometry(.9,3.4,8),ML(0xcfd8ff,0x223a77));bd.rotation.x=-Math.PI/2;ship.add(bd);
+ const ck=new THREE.Mesh(new THREE.SphereGeometry(.5,12,10),MB(0x00e5ff));ck.position.set(0,.4,.2);ship.add(ck);
+ const wg=new THREE.Mesh(new THREE.BoxGeometry(3.8,.12,1.3),ML(0x3a4a9a,0x0a1a66));wg.position.z=.7;ship.add(wg);
+ flame=new THREE.Mesh(new THREE.SphereGeometry(.45,10,8),MB(0xff9a2b));flame.position.z=1.9;ship.add(flame);
+ w2=new THREE.Mesh(new THREE.BoxGeometry(6,.1,.7),MB(0xff2bd6));w2.position.z=1.1;ship.add(w2);
+ halo=new THREE.Mesh(new THREE.TorusGeometry(2.4,.07,6,32),MB(0x00e5ff));ship.add(halo);
+ crown=new THREE.Group();const cb=new THREE.Mesh(new THREE.CylinderGeometry(.6,.5,.35,8),MB(0xffd700));cb.position.y=1.5;crown.add(cb);
+ for(let k=0;k<5;k++){const sk=new THREE.Mesh(new THREE.ConeGeometry(.12,.4,4),MB(0xffd700));sk.position.set(Math.cos(k*1.2566)*.5,1.9,Math.sin(k*1.2566)*.5);crown.add(sk)}
+ ship.add(crown);w2.visible=halo.visible=crown.visible=false;S.add(ship)}
+function buildGates(){const cs=[0x00e5ff,0xffd23f,0xff2bd6,0x39ff88];for(let k=0;k<N;k++){const s=secOf(k),g=new THREE.Group(),r=new THREE.Mesh(new THREE.TorusGeometry(7,.4,10,40),MB(cs[s]));g.add(r);
+ g.add(new THREE.Mesh(new THREE.CircleGeometry(7,32),new THREE.MeshBasicMaterial({color:cs[s],transparent:true,opacity:.1,side:THREE.DoubleSide})));g.position.z=-70*(k+1);S.add(g);GT.push({z:g.position.z,g,r})}}
+function resize(){if(!R)return;R.setSize(innerWidth,innerHeight,false);C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix()}
+function startGame(){show('game');N=CFG.qs.length;
+ if(!booted){booted=true;R=new THREE.WebGLRenderer({canvas:$('#cv'),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));S=new THREE.Scene();C=new THREE.PerspectiveCamera(65,1,.1,3500);build();buildGates();clk=new THREE.Clock();addEventListener('resize',resize);loop()}
+ resize();hud();rewards(true);toast(SN[0])}
+const clamp=(a,l,h)=>Math.max(l,Math.min(h,a));
+addEventListener('keydown',e=>{if(!G)return;if(mode==='quiz'&&e.code in KM){e.preventDefault();answer(KM[e.code]);return}K[e.code]=1;if(e.code.startsWith('Arrow'))e.preventDefault()});
+addEventListener('keyup',e=>K[e.code]=0);
+const KM={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3};
+document.querySelectorAll('#dpad button').forEach(b=>{const k=b.dataset.k;b.onpointerdown=e=>{e.preventDefault();DP[k]=1};b.onpointerup=b.onpointerleave=b.onpointercancel=()=>DP[k]=0});
+let lx=0,ly=0,dg=false;const cv=$('#cv');cv.onpointerdown=e=>{dg=true;lx=e.clientX;ly=e.clientY};
+cv.onpointermove=e=>{if(!dg||mode==='quiz')return;TX=clamp(TX+(e.clientX-lx)*.05,-9,9);TY=clamp(TY-(e.clientY-ly)*.05,-5,5);lx=e.clientX;ly=e.clientY};cv.onpointerup=cv.onpointercancel=()=>dg=false;
+function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,2000)}
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+function hud(){$('#hn').textContent='👨‍🚀 '+G.name;$('#hz').textContent=SN[secOf(Math.min(G.qi,N-1))];$('#hg').textContent='🚪 '+Math.min(G.qi+1,N)+'/'+N;$('#hs').textContent='⭐ '+G.score;$('#hc').textContent='✔ '+G.correct+'  ✖ '+G.wrong;$('#he').textContent='⚡ '+G.gems}
+const MAXS=()=>CFG.qs.reduce((s,q)=>s+(q.w||3)*10+10,0);
+const tiers=()=>[[.4,'🚀 Plasma Wings'],[.7,'🎖️ Astronaut Badge'],[.9,'👑 Golden Galaxy Crown']].filter(t=>G.score>=t[0]*MAXS());
+function rewards(q){const g=tiers(),prev=$('#tray').children.length;w2.visible=g.length>0;halo.visible=g.length>1;crown.visible=g.length>2;$('#tray').innerHTML=g.map(t=>'<div>'+t[1]+'</div>').join('');if(!q&&g.length>prev)toast('🎁 '+g[g.length-1][1]+' unlocked!')}
+function loop(){requestAnimationFrame(loop);if(!G)return;const dt=Math.min(clk.getDelta(),.05),t=clk.elapsedTime,sz=ship.position.z;
+ if(mode!=='quiz'&&!done){TX=clamp(TX+((K.ArrowRight||K.KeyD||DP.r?1:0)-(K.ArrowLeft||K.KeyA||DP.l?1:0))*16*dt,-9,9);TY=clamp(TY+((K.ArrowUp||K.KeyW||DP.u?1:0)-(K.ArrowDown||K.KeyS||DP.d?1:0))*16*dt,-5,5)}
+ const k=Math.min(1,6*dt);ship.rotation.z=(ship.position.x-TX)*.12;ship.position.x+=(TX-ship.position.x)*k;ship.position.y+=(TY-ship.position.y)*k;
+ if(mode==='fly'){const stop=GT[G.qi].z+6,dist=sz-stop;if(dist<=.3){ship.position.z=stop;mode='quiz';v=0;openQuiz()}else{v=Math.min(45,Math.max(10,dist*1.4));ship.position.z-=v*dt}}
+ else if(mode==='pass'){v=Math.min(70,v+90*dt);ship.position.z-=v*dt;if(ship.position.z<=passZ){if(G.qi>=N){done=true;mode='end';setTimeout(finish,700)}else{mode='fly';const s=secOf(G.qi);if(s!==curSec){curSec=s;toast(SN[s])}hud()}}}
+ else if(mode==='end')ship.position.z-=20*dt;
+ const a=stars.geometry.attributes.position,zz=ship.position.z;for(let i=0;i<a.count;i++){if(a.getZ(i)>zz+60)a.setZ(i,a.getZ(i)-420)}a.needsUpdate=true;
+ AS.forEach((m,i)=>{m.rotation.x+=dt*.3;m.rotation.y+=dt*.2;if(m.position.z>zz+30)plc(m,zz-300-Math.random()*150)});
+ GT.forEach(o=>o.r.rotation.z+=dt*.6);cores.forEach((r,i)=>r.rotation.z+=dt*(i?.5:-.4));halo.rotation.x+=dt*2;crown.rotation.y+=dt*2;flame.scale.setScalar(.8+.3*Math.sin(t*30));
+ C.position.lerp(new THREE.Vector3(ship.position.x*.5,ship.position.y*.5+3,zz+11),.1);C.lookAt(ship.position.x*.5,ship.position.y*.5,zz-20);
+ $('#ht').textContent='⏱ '+fmt(Math.round((Date.now()-G.t0)/1000));R.render(S,C)}
+
+/* ---------- 4-DIRECTION QUIZ ---------- */
+function openQuiz(){lock=false;const q=CFG.qs[G.qi];qt0=performance.now();document.body.classList.add('q');
+ $('#qs').textContent=SN[secOf(G.qi)]+' • Gate '+(G.qi+1)+' / '+N;$('#qq').textContent=q.q;$('#qf').textContent='';
+ document.querySelectorAll('.pt').forEach(b=>{const i=+b.dataset.i;b.className='pt '+b.dataset.d;b.innerHTML='<span class="ar">'+'▲▼◀▶'[i]+'</span><b>'+'ABCD'[i]+'</b><span>'+esc(q.o[i])+'</span>'});
+ const b=$('#bar');b.style.transition='none';b.style.width='100%';void b.offsetWidth;b.style.transition='width 30s linear';b.style.width='0%';$('#quiz').style.display='flex'}
+$('#qgrid').onclick=e=>{const b=e.target.closest('.pt');if(b)answer(+b.dataset.i)};
+function answer(i){if(lock||mode!=='quiz')return;lock=true;const q=CFG.qs[G.qi],el=(performance.now()-qt0)/1000,ok=i===+q.c,b=n=>$('.pt[data-i="'+n+'"]');
+ b(q.c).classList.add('good');if(!ok)b(i).classList.add('bad');
+ if(ok){const w=q.w||3,bonus=Math.round(10*Math.max(0,1-el/30));G.correct++;G.nilai+=w;G.score+=w*10+bonus;G.gems+=bonus;$('#qf').textContent='✅ Correct! +'+w*10+' points, +'+bonus+' ⚡ Starlight Energy'}
+ else{G.wrong++;$('#qf').textContent='❌ Not quite. Correct answer: '+'ABCD'[q.c]}
+ GT[G.qi].r.material.color.setHex(ok?0x39ff88:0xff3355);
+ G.qi++;G.stage=SB().filter(x=>G.qi>=x).length;sync(G.qi>=N?'Finished':'Playing');hud();rewards();
+ setTimeout(()=>{$('#quiz').style.display='none';document.body.classList.remove('q');mode='pass';v=0;passZ=ship.position.z-14},1600)}
+function finish(){const sec=Math.round((Date.now()-G.t0)/1000),g=tiers();
+ $('#endc').innerHTML='<h1>🌌 Mission Complete!</h1><h2>'+esc(G.name)+' • '+esc(G.cls)+'</h2><div class="grid"><div class="stat"><b>'+G.nilai+' / '+CFG.qs.reduce((s,q)=>s+(q.w||3),0)+'</b>Official key score</div><div class="stat"><b>'+G.score+'</b>Galaxy score</div><div class="stat"><b>'+G.correct+' / '+G.wrong+'</b>Correct / wrong</div><div class="stat"><b>'+fmt(sec)+'</b>Time</div><div class="stat"><b>⚡ '+G.gems+'</b>Starlight Energy</div></div><h2>Rewards unlocked</h2><div style="font-size:1.3rem">'+(g.length?g.map(t=>t[1]).join('<br>'):'Keep training to earn a reward!')+'</div><p class="sub">Your result was saved for your teacher.</p><button class="btn" onclick="location.reload()">Fly again</button>';
+ $('#end').classList.add('on');$('#end').style.display='flex'}
+
+/* ---------- ADMIN ---------- */
+let ROWS=[];
+function tab(n){['dash','qs','set'].forEach(k=>$('#t_'+k).style.display=k==n?'block':'none');if(n=='dash')dash();if(n=='qs')qlist();if(n=='set'){$('#tk').value=CFG.token;$('#url').value=CFG.url||''}}
+async function dash(){const r=await getJ('action=list');ROWS=r&&r.rows?r.rows:LS.g('sx_rows',[]);ROWS.sort((a,b)=>(+b.score||0)-(+a.score||0));
+ const n=ROWS.length,sum=(f)=>ROWS.reduce((s,x)=>s+(+x[f]||0),0),top=ROWS.slice().sort((a,b)=>b.score-a.score)[0],tc=sum('correct'),tw=sum('wrong'),fin=ROWS.filter(x=>x.status=='Finished').length,cl={};
+ ROWS.forEach(x=>{(cl[x.cls]=cl[x.cls]||[]).push(+x.score||0)});
+ $('#t_dash').innerHTML='<div class="grid"><div class="stat"><b>'+n+'</b>Players</div><div class="stat"><b>'+fin+'</b>Finished</div><div class="stat"><b>'+(n?Math.round(sum('score')/n):0)+'</b>Average score</div><div class="stat"><b>'+(top?esc(top.name)+' ('+top.score+')':'-')+'</b>Highest scorer</div><div class="stat"><b>'+(tc+tw?Math.round(100*tc/(tc+tw)):0)+'%</b>Accuracy</div></div>'
+ +'<p class="sub">Class averages: '+(Object.keys(cl).map(k=>esc(k)+' = '+Math.round(cl[k].reduce((a,b)=>a+b,0)/cl[k].length)).join(' • ')||'-')+' • Score = 10 × key points + speed bonus • Source: '+(URLX()?'Google Sheet (live, refreshes every 10s)':'this browser (local mode)')+'</p>'
+ +'<button class="btn" onclick="dash()">🔄 Refresh</button><button class="btn alt" onclick="dl()">⬇️ Export Excel/CSV</button><button class="btn ghost" onclick="cp()">📋 Copy CSV</button><div class="tw"><table><tr><th>#</th><th>Name</th><th>Class</th><th>Token</th><th>Stage</th><th>✔</th><th>✖</th><th>Sec</th><th>Score</th><th>Status</th></tr>'
+ +ROWS.map((x,n)=>'<tr><td>'+(n+1)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.cls)+'</td><td>'+esc(x.token)+'</td><td>'+esc(x.stage)+'/4</td><td>'+esc(x.correct)+'</td><td>'+esc(x.wrong)+'</td><td>'+esc(x.seconds)+'</td><td>'+esc(x.score)+'</td><td>'+esc(x.status)+'</td></tr>').join('')+'</table></div>'}
+setInterval(()=>{if($('#adm').classList.contains('on')&&$('#t_dash').style.display!='none')dash()},10000);
+function csv(){const h=['Time','Name','Class','Token','Stage','Correct','Wrong','Seconds','Score','Status'],k=['time','name','cls','token','stage','correct','wrong','seconds','score','status'],q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';return [h.map(q).join(',')].concat(ROWS.map(r=>k.map(f=>q(r[f])).join(','))).join('\r\n')}
+function dl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv()],{type:'text/csv'}));a.download='treasure-island-results.csv';a.click()}
+function cp(){const t=document.createElement('textarea');t.value=csv();document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(e){}t.remove();alert('CSV copied. Paste it into Excel or Sheets.')}
+let eIdx=-1;
+function qlist(){$('#ql').innerHTML=CFG.qs.map((q,i)=>'<div class="stat" style="text-align:left;margin:4px 0"><b style="font-size:1rem">'+(i+1)+'. '+esc(q.q)+'</b><span class="sub">'+q.o.map((o,j)=>(j==q.c?'✅ ':'')+esc(o)).join(' | ')+'</span><br><button class="btn ghost" onclick="qe('+i+')">Edit</button><button class="btn red" onclick="qd('+i+')">Delete</button></div>').join('')||'<p>No questions yet.</p>'}
+window.qe=i=>{eIdx=i;const q=CFG.qs[i];$('#eq').value=q.q;q.o.forEach((o,j)=>$('#o'+j).value=o);$('#oc').value=q.c;$('#qh').textContent='Edit question '+(i+1)};
+window.qd=i=>{if(confirm('Delete this question?')){CFG.qs.splice(i,1);saveCfg();qlist()}};
+$('#qcl').onclick=()=>{eIdx=-1;['eq','o0','o1','o2','o3'].forEach(i=>$('#'+i).value='');$('#qh').textContent='Add question'};
+$('#qsv').onclick=()=>{const o=[0,1,2,3].map(i=>$('#o'+i).value.trim()),q=$('#eq').value.trim();if(!q||o.some(x=>!x))return alert('Fill in the question and all 4 options.');const it={q,o,c:+$('#oc').value,w:(eIdx>=0&&CFG.qs[eIdx].w)||3};if(eIdx<0)CFG.qs.push(it);else CFG.qs[eIdx]=it;saveCfg();$('#qcl').click();qlist()};
+const ok=m=>{$('#sm').textContent=m;setTimeout(()=>$('#sm').textContent='',2500)};
+$('#tks').onclick=()=>{CFG.token=$('#tk').value.trim().toUpperCase();saveCfg();ok('Token saved: '+CFG.token)};
+$('#tkr').onclick=()=>{$('#tk').value=Math.random().toString(36).slice(2,8).toUpperCase()};
+$('#pws').onclick=()=>{if($('#pw').value.length<4)return ok('Use at least 4 characters.');CFG.pw=$('#pw').value;LS.s('sx_cfg',CFG);$('#pw').value='';ok('Password changed (this browser).')};
+$('#urs').onclick=()=>{CFG.url=$('#url').value.trim();saveCfg();ok('URL saved.')};
+$('#qrs').onclick=()=>{if(confirm('Replace all current questions with the 35 ASAS Math Grade 8 questions?')){CFG.qs=DQ.map(mk);saveCfg();qlist()}};
+
+</script></body></html>
